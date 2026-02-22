@@ -64,3 +64,46 @@ describe ("Chapter 4: API Tests", () => {
   });
 
 });
+
+describe ("Chapter 5: API Tests", () => {
+  it("Returns 204 status code when updating a book", async () => {
+
+    const res = await request(app).put("/api/books/1").send({
+      title: "The Idiots Guide to Jest Tests",
+      author: "William Testington"
+    })
+
+    expect(res.statusCode).toEqual(204);
+ });
+
+  it("Returns 400 status code when updating a book with a non-numeric id", async () => {
+
+    const res = await request(app).put("/api/books/foo").send({
+      title: "The Idiots Guide to Jest Tests",
+      author: "William Testington",
+    });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.message).toEqual("Input must be a number");
+ });
+
+  it("Returns a 400 status code when updating a book with missing keys or extra keys", async () => {
+
+    const res = await request(app).put("/api/books/1").send({
+      title: "Test Book"
+    });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.message).toEqual("Bad Request");
+
+    const res2 = await request(app).put("/api/books/1").send({
+      title: "The Idiots Guide to Jest Tests",
+      author: "William Testington",
+      extraKey: "extra"
+    });
+
+    expect(res2.statusCode).toEqual(400);
+    expect(res2.body.message).toEqual("Bad Request");
+ });
+
+});

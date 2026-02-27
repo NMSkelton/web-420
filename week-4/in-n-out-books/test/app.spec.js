@@ -105,5 +105,32 @@ describe ("Chapter 5: API Tests", () => {
     expect(res2.statusCode).toEqual(400);
     expect(res2.body.message).toEqual("Bad Request");
  });
+});
 
+describe ("Chapter 6: Authentication and Authorization Tests", () => {
+  it("Logs a user in and returns a 200 status with 'Authentication successful' message", async () => {
+    const res = await request(app).post("/api/login").send({
+      email: "hermione@hogwarts.edu",
+      password: "granger"
+    });
+    expect(res.statusCode).toEqual(200);
+    expect(res.body.message).toEqual("Authentication successful");
+  });
+
+  it("Returns a 401 status code with 'Unauthorized' message when logging in with incorrect credentials", async () => {
+    const res = await request(app).post("/api/login").send({
+      email:"hermione@hogwarts.edu",
+      password:"notHermione"
+  });
+  expect(res.statusCode).toEqual(401);
+});
+
+  it("Returns a 400 status code with 'Bad Request' when missing email or password", async () => {
+    const res = await request(app).post("/api/login").send({
+      email: "cedric@hogwarts.edu",
+    });
+
+    expect(res.statusCode).toEqual(400);
+    expect(res.body.message).toEqual("Bad Request");
+  });
 });

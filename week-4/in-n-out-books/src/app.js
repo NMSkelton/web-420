@@ -7,6 +7,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const createError = require("http-errors");
 const books = require("../database/books");
+const users = require("../database/users");
 
 const app = express(); // Creates an Express application
 
@@ -238,6 +239,38 @@ app.put("/api/books/:id", async (req, res, next) => {
       return next(createError(404, "Book not found"));
     }
 
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+app.post("/api/login", async (req, res, next) => {
+  console.log("Request body: ", req.body);
+  try {
+    const user = req.body;
+    const {email, password} = req.body;
+    const expectedKeys = ["email", "password"];
+    const receivedKeys = Object.keys(user);
+
+    if (!receivedKeys.every(key => expectedKeys.includes(key)) || receivedKeys.length !== expectedKeys.length) {
+      console.error("Bad Request: Missing keys or extra keys", receivedKeys);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const nonUser = await users.findOne({ email });
+    if (!nonUser) {
+      return next(createError(401, "Unauthorized"));
+    }
+
+    const validPassword = bcrypt.compareSync(password, nonUser.password);
+    if(!validPassword) {
+      return next(createError(401, "Unauthorized"));
+    }
+    res.status(200).send({
+    message: "Authentication successful"
+    });
+
+  } catch (err) {
     console.error("Error: ", err.message);
     next(err);
   }

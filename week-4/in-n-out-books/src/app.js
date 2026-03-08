@@ -8,6 +8,26 @@ const bcrypt = require("bcryptjs");
 const createError = require("http-errors");
 const books = require("../database/books");
 const users = require("../database/users");
+const Ajv = require("ajv");
+const ajv = new Ajv();
+const securityQuestionsSchema = {
+ type: "object",
+ properties: {
+  securityQuestions: {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        answer: { type: "string" }
+      },
+      required: ["answer"],
+      additionalProperties: false
+    }
+  }
+ },
+ required: ["securityQuestions"],
+ additionalProperties: false
+};
 
 const app = express(); // Creates an Express application
 
@@ -269,6 +289,36 @@ app.post("/api/login", async (req, res, next) => {
     res.status(200).send({
     message: "Authentication successful"
     });
+
+  } catch (err) {
+    console.error("Error: ", err.message);
+    next(err);
+  }
+});
+
+app.post("/api/users/:email/security-questions", async (req, res, next) => {
+  try {
+    const { email } = req.params;
+    const { securityQuestions } = req.body;
+
+    const validate = ajv.compile(securityQuestionsSchema);
+    const valid = validate(req.body);
+
+    if (!valid) {
+      console.error("Bad Request: Invalid request body", validate.errors);
+      return next(createError(400, "Bad Request"));
+    }
+
+    const user = await users.findOne({ email: email });
+
+    if (securityQuestions[0].answer !== user.securityQuestions[0].answer ||
+      securityQuestions[1].answer !== user.securityQuestions[1].answer ||
+      securityQuestions[2].answer !== user.securityQuestions[2].answer) {
+      console.error("Unauthorized: Security questions do not match");
+      return next(createError(401, "Unauthorized"));
+    }
+
+    res.status(200).send({ message: "Security questions successfully answered", user: user});
 
   } catch (err) {
     console.error("Error: ", err.message);
